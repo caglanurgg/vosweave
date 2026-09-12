@@ -5,8 +5,7 @@ from highlighter import highlight_text
 from ai_engine import generate_reading_package, generate_explanation, generate_speech
 from ui import render_sidebar, render_vocabulary_assistant, render_exercises
 
-# 1. Sayfa Konfigürasyonu ve Temiz Görünüm
-st.set_page_config(page_title="AI Language Learning Platform", page_icon="🌏", layout="wide")
+st.set_page_config(page_title="VosWeave", page_icon="🦊", layout="wide")
 
 st.markdown("""
 <style>
@@ -34,8 +33,8 @@ if 'saved_session' not in st.session_state:
 
 saved = st.session_state['saved_session'] if st.session_state['saved_session'] is not None else {}
 
-st.markdown("<h1 class='main-title'>🌏 Universal AI Reading Platform</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Adaptive Learning Platform with Persistent Reading Heatmap.</p>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title'>🦊 VosWeave</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Adaptive Cognitive Reading & Language Continuity Engine</p>", unsafe_allow_html=True)
 st.write("---")
 
 api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", "")

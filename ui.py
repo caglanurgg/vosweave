@@ -5,9 +5,7 @@ from analytics import update_analytics
 from storage import save_analytics
 
 def render_sidebar(save_heatmap):
-    """Yan paneldeki AI Hafıza Dashboard'unu ve Learner Analytics'i çizer."""
-    # Sol paneli görünmeye zorlayan bilgilendirme alanı
-    st.sidebar.info("💡 Your learning progress is being calculated in real-time.")
+    st.sidebar.info("🦊 VosWeave is weaving your learning progress in real-time.")
     st.sidebar.markdown("## 📈 Learner Analytics")
     
     analytics = st.session_state.get('learner_analytics', {})
@@ -28,7 +26,7 @@ def render_sidebar(save_heatmap):
     
     lang_dist = analytics.get("language_distribution", {})
     if lang_dist:
-        st.sidebar.markdown("##### 🌏 Languages Studied")
+        st.sidebar.markdown("##### 📚 Languages Studied")
         for lang, count in lang_dist.items():
             st.sidebar.write(f"• **{lang}:** {count} text(s)")
             
@@ -166,7 +164,6 @@ def render_exercises(exercises, api_key, reading_text, show_tf=True, show_mc=Tru
         if show_writing and "open_ended" in exercises and exercises["open_ended"]:
             st.markdown("### ✍️ Open-ended Writing Prompt")
             
-            # Gelen verinin dictionary olup olmadığını garantiye alıyoruz
             open_ended_data = exercises["open_ended"]
             if isinstance(open_ended_data, list) and len(open_ended_data) > 0:
                 open_ended_data = open_ended_data[0]
@@ -220,8 +217,6 @@ def render_exercises(exercises, api_key, reading_text, show_tf=True, show_mc=Tru
     <strong style="color: #1c8cf0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">💡 Teacher's Note & Language Insight</strong>
     <div style="font-size: 1.15rem; line-height: 1.7; white-space: pre-wrap; margin-top: 8px; color: #E5E7EB;">{explanation}</div></div>""", unsafe_allow_html=True)
 
-# 📊 SPRINT 8.2: MODÜLER ANALİTİK TETİKLEME (ui.py sadece olay üretir)
-        # Önce bu testteki toplam doğru sayısını hesaplayalım
         total_correct = 0
         total_q = 0
         
@@ -241,7 +236,6 @@ def render_exercises(exercises, api_key, reading_text, show_tf=True, show_mc=Tru
                     if user_mc_answers[i].startswith(correct_opt) or correct_opt in user_mc_answers[i]:
                         total_correct += 1
 
-# 🎯 SPRINT 8.4: Hata Türlerini Dinamik Olarak Sayma
         mistake_counter = {"Inference": 0, "False Assumption": 0, "Careless Reading": 0}
         
         if show_tf and "true_false" in exercises:
@@ -249,7 +243,6 @@ def render_exercises(exercises, api_key, reading_text, show_tf=True, show_mc=Tru
                 if user_tf_answers.get(i) != "Not Answered":
                     user_bool = True if user_tf_answers[i] == "True" else False
                     if user_bool != tf.get('correct_answer'):
-                        # Eğer yanlışsa hata türünü al ve arttır
                         m_type = tf.get('mistake_type', 'Careless Reading')
                         if m_type in mistake_counter:
                             mistake_counter[m_type] += 1
@@ -259,17 +252,13 @@ def render_exercises(exercises, api_key, reading_text, show_tf=True, show_mc=Tru
                 if user_mc_answers.get(i) != "Not Answered":
                     correct_opt = mc.get('correct_answer')
                     if not (user_mc_answers[i].startswith(correct_opt) or correct_opt in user_mc_answers[i]):
-                        # Eğer yanlışsa hata türünü al ve arttır
                         m_type = mc.get('mistake_type', 'Inference')
                         if m_type in mistake_counter:
                             mistake_counter[m_type] += 1
 
         if total_q > 0:
-            # app.py'da session_state'e yüklediğimiz hedef dil bilgisini çekelim
-            # (Streamlit state'inden dili güvenle okuyoruz)
             current_lang = st.session_state.get('saved_session', {}).get('ui_target_language', 'Unknown')
             
-            # 1. Önce hesaplamayı yap (Artık mistake_counter da gidiyor)
             updated_data, session_summary = update_analytics(
                 st.session_state['learner_analytics'],
                 total_correct,
@@ -278,14 +267,11 @@ def render_exercises(exercises, api_key, reading_text, show_tf=True, show_mc=Tru
                 mistake_counter 
             )
             
-            # 2. Sonra anında state'i güncelle ve diske yaz 
             st.session_state['learner_analytics'] = updated_data
             save_analytics(updated_data)
             
-            # 3. Geçici bildirimi fırlat
             st.toast(f"📊 Session Saved! Accuracy: %{session_summary['accuracy']}", icon="📈")
 
-            # 4. En son güncel veriyle kalıcı HTML kartlarını ekrana bas
             st.markdown("---")
             st.markdown("### 📈 Overall Learner Analytics Progress")
             
@@ -306,7 +292,6 @@ def render_exercises(exercises, api_key, reading_text, show_tf=True, show_mc=Tru
                     <strong style="font-size: 1.8rem; color: #f59e0b;">{updated_data.get('total_questions_answered', 0)}</strong>
                 </div>""", unsafe_allow_html=True)
 
-        # Open-ended değerlendirme tetikleyicisi (Güvenli Sürüm)
         if show_writing and user_writing_answer.strip():
             st.markdown("### 📝 Writing Feedback")
             with st.spinner("Yazınız analiz ediliyor..."):

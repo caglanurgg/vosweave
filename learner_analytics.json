@@ -1,12 +1,23 @@
 {
-  "user_id": "default_user",
-  "heatmap_vocab": {},
-  "reading_history": [],
-  "cognitive_profile": {
-    "visual_thinking_index": 0.5,
-    "inference_accuracy": 0.5,
-    "abstract_tolerance": 0.5,
-    "avg_reading_speed_wpm": 0,
-    "total_texts_read": 0
-  }
+    "user_id": "default_user",
+    "heatmap_vocab": {},
+    "reading_history": [],
+    "cognitive_profile": {
+        "visual_thinking_index": 0.5,
+        "inference_accuracy": 0.5,
+        "abstract_tolerance": 0.5,
+        "avg_reading_speed_wpm": 0,
+        "total_texts_read": 0
+    },
+    "total_texts_read": 1,
+    "correct_answers": 2,
+    "total_questions_answered": 5,
+    "language_distribution": {
+        "English": 1
+    },
+    "mistake_types_distribution": {
+        "Inference": 3,
+        "False Assumption": 0,
+        "Careless Reading": 0
+    }
 }

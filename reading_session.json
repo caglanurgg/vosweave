@@ -1,0 +1,135 @@
+{
+    "api_data": {
+        "reading_difficulty": {
+            "vocabulary": "★★★★☆",
+            "grammar": "★★★☆☆",
+            "inference": "★★★★★"
+        },
+        "estimated_reading_time": "4 min",
+        "title": "A Day in Amsterdam",
+        "text": "In Amsterdam, mornings begin with the sound of bicycle bells ringing. Residents enjoy a routine marked by efficiency and leisure. They often start their day at a local café, sipping strong coffee while reading the news. As the sun rises, the streets fill with cyclists, effortlessly navigating past picturesque canals and historic buildings. Mid-morning, people head to work, many opting for bicycles instead of cars. Lunchtime presents another opportunity for social interaction, as friends gather in parks or at outdoor tables. The afternoon often brings a mix of productivity and relaxation. Some visit museums or art galleries, appreciating the city’s rich cultural heritage. As evening approaches, the atmosphere shifts; restaurants buzz with patrons enjoying traditional Dutch dishes. The day concludes with the vibrant nightlife, where locals and tourists alike explore the myriad of entertainment options available. Amsterdam’s daily routine beautifully balances work and leisure, creating a unique urban rhythm.",
+        "vocabulary": [
+            {
+                "word": "efficiency",
+                "meaning": "verimlilik",
+                "level": "B2",
+                "pronunciation": "/ɪˈfɪʃənsi/",
+                "example": "The efficiency of the public transport system in Amsterdam is impressive.",
+                "variants": [
+                    {
+                        "form": "efficient",
+                        "explanation": "Sıfat: Verimli"
+                    }
+                ]
+            },
+            {
+                "word": "picturesque",
+                "meaning": "resmedilmeye değer",
+                "level": "B2",
+                "pronunciation": "/ˌpɪk.tʃərˈɛsk/",
+                "example": "The picturesque canals of Amsterdam attract many tourists.",
+                "variants": [
+                    {
+                        "form": "picturesquely",
+                        "explanation": "Zarf: Resmedilmeye değer bir şekilde"
+                    }
+                ]
+            },
+            {
+                "word": "interaction",
+                "meaning": "etkileşim",
+                "level": "B2",
+                "pronunciation": "/ˌɪntərˈækʃən/",
+                "example": "Social interaction is essential for community bonding.",
+                "variants": [
+                    {
+                        "form": "interact",
+                        "explanation": "Fiil: Etkileşimde bulunmak"
+                    }
+                ]
+            },
+            {
+                "word": "heritage",
+                "meaning": "miras",
+                "level": "B2",
+                "pronunciation": "/ˈhɛrɪtɪdʒ/",
+                "example": "Cultural heritage is preserved in Amsterdam's museums.",
+                "variants": [
+                    {
+                        "form": "hereditary",
+                        "explanation": "Sıfat: Mirasla ilgili"
+                    }
+                ]
+            },
+            {
+                "word": "vibrant",
+                "meaning": "canlı",
+                "level": "B2",
+                "pronunciation": "/ˈvaɪbrənt/",
+                "example": "The vibrant nightlife of Amsterdam attracts many visitors.",
+                "variants": [
+                    {
+                        "form": "vibrantly",
+                        "explanation": "Zarf: Canlı bir şekilde"
+                    }
+                ]
+            }
+        ],
+        "exercises": {
+            "true_false": [
+                {
+                    "statement": "Residents in Amsterdam often start their day with a strong coffee.",
+                    "correct_answer": true,
+                    "evidence": "They often start their day at a local café, sipping strong coffee while reading the news."
+                },
+                {
+                    "statement": "Bicycles are rarely used for commuting in Amsterdam.",
+                    "correct_answer": false,
+                    "evidence": "Many opting for bicycles instead of cars."
+                },
+                {
+                    "statement": "Amsterdam has a quiet nightlife with few entertainment options.",
+                    "correct_answer": false,
+                    "evidence": "The day concludes with the vibrant nightlife, where locals and tourists alike explore the myriad of entertainment options available."
+                }
+            ],
+            "multiple_choice": [
+                {
+                    "question": "What do people in Amsterdam often do during lunchtime?",
+                    "options": [
+                        "Gather in parks",
+                        "Work in offices"
+                    ],
+                    "correct_answer": "Option A",
+                    "evidence": "Friends gather in parks or at outdoor tables."
+                },
+                {
+                    "question": "What attracts many tourists to Amsterdam?",
+                    "options": [
+                        "The picturesque canals",
+                        "The shopping centers"
+                    ],
+                    "correct_answer": "Option A",
+                    "evidence": "The picturesque canals of Amsterdam attract many tourists."
+                },
+                {
+                    "question": "How is the public transport system described?",
+                    "options": [
+                        "Inefficient",
+                        "Impressive"
+                    ],
+                    "correct_answer": "Option B",
+                    "evidence": "The efficiency of the public transport system in Amsterdam is impressive."
+                }
+            ]
+        }
+    },
+    "ui_target_language": "English",
+    "ui_seviye": "B2",
+    "ui_ton": "Academic",
+    "ui_kelime_sayisi": 150,
+    "ui_konu": "Daily routine in Amsterdam",
+    "ui_show_tf": true,
+    "ui_show_mc": true,
+    "ui_show_writing": false
+}
