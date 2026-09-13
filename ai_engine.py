@@ -23,7 +23,7 @@ def get_cognitive_config(level: str) -> dict:
     }
 
 def build_memory_instruction(heatmap_vocab):
-    """Kullanıcının geçmiş kelime hafızasına göre adaptif prompt talimatını hazırlar."""
+    """Kullanıcının geçmiş kelime hafızasına göre bilişsel devamlılık (continuity) kurallarını hazırlar."""
     if not heatmap_vocab:
         return ""
         
@@ -32,17 +32,17 @@ def build_memory_instruction(heatmap_vocab):
     new_words = [w for w, status in heatmap_vocab.items() if "New to me" in status]
     
     return f"""
-    \nCRITICAL - LEARNER PROFILE ADAPTATION:
+    \nCRITICAL - COGNITIVE CONTINUITY & LEARNER PROFILE ADAPTATION:
     The user has a personalized vocabulary history tracking profile:
-    - 🔴 New to me (Struggling/New): {new_words}
-    - 🟡 I've seen this (In-progress): {seen_words}
-    - 🟢 I know this (Mastered): {known_words}
+    - 🔴 New to me (Target / In-need of reinforcement): {new_words}
+    - 🟡 I've seen this (In-progress / Developing): {seen_words}
+    - 🟢 I know this (Mastered / Familiar): {known_words}
     
-    GENERATION RULES:
-    1. If appropriate, naturally include and REUSE words from the '🔴 New to me' list at least twice to enforce learning.
-    2. Occasionally re-introduce words from the '🟡 I've seen this' list to spark active recall.
-    3. Do NOT substitute standard vocabulary with words from the '🟢 I know this' list unless completely unavoidable.
-    4. Introduce AT MOST 2 completely new advanced vocabulary words that are not in the profile to control cognitive load.
+    CONTINUITY GENERATION RULES:
+    1. SEAMLESS REUSE: Pick 1 to 2 words from '🔴 New to me' (or '🟡 I've seen this') and weave them NATURALLY into the new context/story. Do NOT force them unnaturally.
+    2. STRUCTURAL SCAFFOLDING: Reuse familiar simple sentence patterns (e.g. Subject + Verb + Object) from previous contexts so the reader recognizes the structure even with new vocabulary.
+    3. COGNITIVE LOAD CONTROL: Limit completely unfamiliar, advanced words to at most 2-3 words. The rest should rely on familiar scaffolding and clear representative vocabulary.
+    4. Do NOT fill the text with words from '🟢 I know this' unless contextually essential.
     """
 
 def generate_reading_package(api_key, target_language, seviye, ton, kelime_sayisi, konu, heatmap_vocab, exercise_settings):
@@ -51,24 +51,22 @@ def generate_reading_package(api_key, target_language, seviye, ton, kelime_sayis
     ve geriye (True/False, parsed_data, error_message) şeklinde 3'lü tuple döndürür.
     """
 
-    # Eğer kullanıcı konu girmediyse yapay zeka rastgele ama seviyeye uygun saçmalasın
     final_topic = konu if konu.strip() else "General topics suitable for this level"
 
-    # 1. Bilişsel Seviye Konfigürasyonunu Alıyoruz (Pinker / Cognitive Load)
     cognitive_config = get_cognitive_config(seviye)
 
-    # 2. Operasyonel Bilişsel Kurallar Bloğu
     cognitive_rules = f"""
     STRICT READING COMPREHENSION RULES (Cognitive Optimization):
     1. SYNTAX & LENGTH: Keep sentences strictly between {cognitive_config['min_sentence_length']} and {cognitive_config['max_sentence_length']} words.
-    2. SHOW, DON'T TELL: Do not use abstract emotional descriptions (e.g. instead of "She was sad", write "She sat in silence and stared at the floor"). Include at least {cognitive_config['concrete_scene_per_paragraph']} concrete visual scene per paragraph.
-    3. NO ZOMBIENESS: Use active, direct verbs only. Avoid nominalizations (e.g. use "investigate" instead of "make an investigation").
+    2. SHOW, DON'T TELL: Do not use abstract emotional descriptions. Include at least {cognitive_config['concrete_scene_per_paragraph']} concrete visual scene per paragraph.
+    3. NO ZOMBIENESS: Use active, direct verbs only. Avoid nominalizations.
     4. NO META-DISCOURSE: Do NOT write "In this story..." or "You will read...". Start directly with the narrative scene.
+    5. REPRESENTATIVE VOCABULARY: Do not overwhelm the reader with many items from the same category (e.g., do not list 5 different fruits or animals; use 1-2 representative items).
     """
 
     try:
         client = OpenAI(api_key=api_key)
-        # Egzersiz şeması ve kurallarının dinamik inşası
+        
         exercise_requirements = []
         json_exercise_schema = {}
 
@@ -86,7 +84,6 @@ def generate_reading_package(api_key, target_language, seviye, ton, kelime_sayis
             
         exercise_req_text = "\n".join(exercise_requirements)
         adaptive_instruction = build_memory_instruction(heatmap_vocab)
-
         cognitive_instruction = f"\n{cognitive_rules}\n"
         
         system_prompt = (
@@ -103,30 +100,31 @@ def generate_reading_package(api_key, target_language, seviye, ton, kelime_sayis
             "  \"text\": \"The complete reading text\",\n"
             "  \"vocabulary\": [\n"
             "     {\n"
-            "       \"word\": \"[Base form of the word]\",\n"
+            "       \"word\": \"[Base lemma form of the word]\",\n"
             "       \"meaning\": \"[Turkish meaning]\",\n"
             "       \"level\": \"[CEFR level]\",\n"
             "       \"pronunciation\": \"[IPA]\",\n"
             "       \"example\": \"[Example sentence]\",\n"
             "       \"variants\": [\n"
-            "          {\"form\": \"[The exact text variant used]\", \"explanation\": \"[Grammar description in Turkish, e.g., 'Zarf / Suffix -ly' or 'Geçmiş Zaman']\"}\n"
+            "          {\"form\": \"[The exact text variant used]\", \"explanation\": \"[Grammar description in Turkish]\"}\n"
             "       ]\n"
             "     }\n"
             "  ],\n"
             "  \"exercises\": " + json.dumps(json_exercise_schema) + "\n"
             "}\n\n"
-            "Generate exactly 5 vocabulary words from the generated text. "
-            "CRITICAL: The vocabulary words MUST be strictly in the selected target language (" + str(target_language) + ") and MUST match or be very close to the requested CEFR level (" + str(seviye) + "). NEVER mix words from other languages or previous topics.\n"
+            "GRAMMATICAL ACCURACY & VARIANT RULES:\n"
+            "- Check parts of speech carefully. If a word is a noun and ends with a plural marker (e.g. Dutch 'fiets' -> 'fietsen', German 'Hund' -> 'Hunde'), classify it as 'Çoğul İsim' (Plural Noun), NEVER as past tense or verb conjugation.\n"
+            "- Only describe verbal tense (e.g. 'Geçmiş Zaman') if the word is genuinely acting as a verb in that sentence.\n\n"
+            "VOCABULARY CONSTRAINTS:\n"
+            "- Generate exactly 5 vocabulary words from the generated text.\n"
+            "- The vocabulary words MUST be strictly in the selected target language (" + str(target_language) + ") and match the requested CEFR level (" + str(seviye) + ").\n"
             "Include only the requested exercises in the 'exercises' object:\n" + str(exercise_req_text) + "\n"
             + str(adaptive_instruction)
             + str(cognitive_instruction)
-            )
-
+        )
         
-        # Mimarideki User Prompt
         user_prompt = f"Write a reading text in {target_language}. Level: {seviye}, Tone: {ton}, Length: ~{kelime_sayisi} words, Subject: {final_topic}"
         
-        # API Çağrısı
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             response_format={"type": "json_object"},
@@ -166,7 +164,7 @@ def generate_explanation(api_key, target_language, reading_text, question, user_
             "Line 1: '🔍 Mistake Type: [Insert exactly one of the 5 categories above]'\n"
             "Line 2: '💡 Why?: [1 short sentence explaining the error in simple clear B1 English]'\n"
             "Line 3: '[Exact Turkish translation of Line 2]'\n"
-            "Line 4: '🎯 Learning Tip: [CRITICAL: Look closely at the highlighted words in the context. If a word appears in a different form than the vocabulary list (e.g., list has \"profound\" but text uses \"profoundly\", or list has \"captiver\" but text uses \"captivé\"), you MUST explicitly explain this specific grammar/morphology transformation (e.g., \"Notice that 'profound' is an adjective, but adding '-ly' makes it 'profoundly', which is an adverb\"). If there is no specific variant, provide a high-value grammar or vocabulary tip based on the sentence.]'\n"
+            "Line 4: '🎯 Learning Tip: [Explain the specific grammar/morphology transformation or provide a high-value tip based on the sentence.]'\n"
             "Line 5: '[Exact Turkish translation of Line 4]'\n\n"
             "Do not output anything else. Keep lines completely separate."
         )
@@ -198,7 +196,6 @@ def generate_speech(api_key, text_to_speak):
     OpenAI TTS API'sini kullanarak verilen kelimenin ses dosyasını (bites) üretir.
     """
     try:
-        from openai import OpenAI
         client = OpenAI(api_key=api_key)
         
         response = client.audio.speech.create(
@@ -208,4 +205,4 @@ def generate_speech(api_key, text_to_speak):
         )
         return response.read()
     except Exception as e:
-        return None    
+        return None
