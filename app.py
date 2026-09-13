@@ -21,6 +21,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Kullanıcı girişi kontrolü (Gatekeeper)
+if not st.user.is_logged_in:
+    st.title("🦊 VosWeave")
+    st.caption("Adaptive Cognitive Reading & Language Continuity Engine")
+    st.info("Lütfen devam etmek için Google hesabınızla giriş yapın.")
+    if st.button("Sign in with Google 🚀", type="primary"):
+        st.login("google")
+    st.stop()  
+
 if 'heatmap_vocab' not in st.session_state:
     st.session_state['heatmap_vocab'] = load_heatmap()
 

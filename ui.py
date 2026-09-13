@@ -5,9 +5,14 @@ from analytics import update_analytics
 from storage import save_analytics
 
 def render_sidebar(save_heatmap):
+    st.sidebar.markdown(f"👤 **{st.user.name or st.user.email}**")
+    if st.sidebar.button("Log out"):
+        st.logout()
+    st.sidebar.divider()
+
     st.sidebar.info("🦊 VosWeave is weaving your learning progress in real-time.")
-    st.sidebar.markdown("## 📈 Learner Analytics")
-    
+    st.sidebar.markdown("## 📊 Learner Analytics")
+
     analytics = st.session_state.get('learner_analytics', {})
     total_texts = analytics.get("total_texts_read", 0)
     total_q = analytics.get("total_questions_answered", 0)
