@@ -12,7 +12,8 @@ def make_accent_free_pattern(word):
         'i': '[iíìîï]',
         'o': '[oóòôö]',
         'u': '[uúùûü]',
-        'c': '[cç]'
+        'c': '[cç]',
+        's': '[sß]'
     }
     pattern_str = ""
     for char in word.lower():
