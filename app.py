@@ -4,6 +4,7 @@ from storage import load_heatmap, save_heatmap, load_reading_session, save_readi
 from highlighter import highlight_text
 from ai_engine import generate_reading_package, generate_explanation, generate_speech
 from ui import render_sidebar, render_vocabulary_assistant, render_exercises
+from quota_manager import check_and_increment_quota, get_current_quota
 
 st.set_page_config(page_title="VosWeave", page_icon="🦊", layout="wide")
 
@@ -83,7 +84,9 @@ with ex_col3:
     show_writing = st.checkbox("Open-ended Writing", value=saved.get("ui_show_writing", False))
 st.write("")
 
-from quota_manager import check_and_increment_quota
+used_count, max_limit = get_current_quota(max_daily_limit=10)
+remaining = max_limit - used_count
+st.caption(f"⚡ Daily AI Quota Remaining: **{remaining} / {max_limit}**")
 
 if st.button("Generate Text & Exercises 🚀", use_container_width=True):
     allowed, current_count = check_and_increment_quota(max_daily_limit=10)

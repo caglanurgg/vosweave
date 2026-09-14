@@ -45,3 +45,25 @@ def check_and_increment_quota(max_daily_limit=10):
         pass
         
     return True, data["generation_count"]
+
+def get_current_quota(max_daily_limit=10):
+    """
+    Sayacı artırmadan kullanıcının bugünkü mevcut kullanım miktarını okur.
+    """
+    user_email = getattr(st.user, "email", "guest") if hasattr(st, "user") else "guest"
+    safe_email = user_email.replace("@", "_at_").replace(".", "_")
+    
+    dir_path = os.path.join("data", safe_email)
+    quota_file = os.path.join(dir_path, "quota.json")
+    today_str = datetime.date.today().isoformat()
+    
+    if os.path.exists(quota_file):
+        try:
+            with open(quota_file, "r", encoding="utf-8") as f:
+                content = json.load(f)
+                if content.get("date") == today_str:
+                    return content.get("generation_count", 0), max_daily_limit
+        except Exception:
+            pass
+            
+    return 0, max_daily_limit
