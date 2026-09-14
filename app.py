@@ -83,20 +83,29 @@ with ex_col3:
     show_writing = st.checkbox("Open-ended Writing", value=saved.get("ui_show_writing", False))
 st.write("")
 
+from quota_manager import check_and_increment_quota
+
 if st.button("Generate Text & Exercises 🚀", use_container_width=True):
-    if 'saved_session' in st.session_state:
-        del st.session_state['saved_session']
-        
-    if not api_key:
-        st.error("⚠️ Please enter a valid API Key before generating content.")
+    allowed, current_count = check_and_increment_quota(max_daily_limit=10)
+    
+    if not allowed:
+        st.error(f"🚨 You have reached your daily AI text generation quota (10/10)! See you tomorrow.")
     else:
-        with st.spinner(f"Generating {target_language} data structure..."):
-            exercise_settings = {"show_tf": show_tf, "show_mc": show_mc, "show_writing": show_writing}
-            
-            success, parsed_data, error_msg = generate_reading_package(
-                api_key, target_language, seviye, ton, kelime_sayisi, konu, 
-                st.session_state['heatmap_vocab'], exercise_settings
-            )
+        st.info(f"📊 Today's AI usage count: {current_count}/10")
+        
+        if 'saved_session' in st.session_state:
+            del st.session_state['saved_session']
+
+        if not api_key:
+            st.error("⚠️ Please enter a valid API Key before generating content.")
+        else:
+            with st.spinner(f"Generating {target_language} data structure..."):
+                exercise_settings = {"show_tf": show_tf, "show_mc": show_mc, "show_writing": show_writing}
+                
+                success, parsed_data, error_msg = generate_reading_package(
+                    api_key, target_language, seviye, ton, kelime_sayisi, konu,
+                    st.session_state['heatmap_vocab'], exercise_settings
+                )
             
             if success:
                 session_payload = {
