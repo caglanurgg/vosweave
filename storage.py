@@ -2,33 +2,47 @@ import json
 import os
 import streamlit as st
 
-# JSON Dosya Yolları Tanımı
-HEATMAP_FILE = "heatmap.json"
-SESSION_FILE = "reading_session.json"
+def get_user_data_dir():
+    """Giriş yapan kullanıcının e-postasına ve seçtiği dile göre dinamik klasör yolu üretir."""
+    user_email = getattr(st.user, "email", "guest") if hasattr(st, "user") else "guest"
+    safe_email = user_email.replace("@", "_at_").replace(".", "_")
+    
+    # Seçilen dili session_state'den alıyoruz (varsayılan: english)
+    selected_lang = st.session_state.get("selected_language", "English").lower()
+    
+    dir_path = os.path.join("data", safe_email, selected_lang)
+    os.makedirs(dir_path, exist_ok=True)
+    return dir_path
 
 def load_heatmap():
-    """Uygulama başlarken yerel JSON dosyasından kelime geçmişini yükler."""
-    if os.path.exists(HEATMAP_FILE):
+    """Uygulama başlarken izole dizinden kelime geçmişini yükler."""
+    dir_path = get_user_data_dir()
+    file_path = os.path.join(dir_path, "heatmap.json")
+    if os.path.exists(file_path):
         try:
-            with open(HEATMAP_FILE, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             return {}
     return {}
 
 def save_heatmap(data):
-    """Kelime geçmişi her güncellendiğinde yerel JSON dosyasına kaydeder."""
+    """Kelime geçmişini izole dizindeki JSON dosyasına kaydeder."""
     try:
-        with open(HEATMAP_FILE, "w", encoding="utf-8") as f:
+        dir_path = get_user_data_dir()
+        file_path = os.path.join(dir_path, "heatmap.json")
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
     except Exception as e:
-        st.error(f"Error saving heatmap to local storage: {e}")
+        st.error(f"Error saving heatmap to storage: {e}")
 
 def load_reading_session():
-    """Uygulama başlarken son üretilen okuma oturumunu yükler."""
-    if os.path.exists(SESSION_FILE):
+    """Uygulama başlarken izole dizinden son okuma oturumunu yükler."""
+    dir_path = get_user_data_dir()
+    file_path = os.path.join(dir_path, "reading_session.json")
+    if os.path.exists(file_path):
         try:
-            with open(SESSION_FILE, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = json.load(f)
                 if isinstance(content, dict) and "api_data" in content:
                     return content
@@ -38,16 +52,19 @@ def load_reading_session():
     return None
 
 def save_reading_session(data):
-    """Yeni bir metin üretildiğinde oturum verilerini JSON dosyasına kaydeder."""
+    """Yeni bir metin üretildiğinde oturum verilerini izole dizine kaydeder."""
     try:
-        with open(SESSION_FILE, "w", encoding="utf-8") as f:
+        dir_path = get_user_data_dir()
+        file_path = os.path.join(dir_path, "reading_session.json")
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
     except Exception as e:
-        st.error(f"Error saving reading session to local storage: {e}")
+        st.error(f"Error saving reading session to storage: {e}")
 
 def load_analytics():
-    """Kullanıcının öğrenme analitiğini diskten yükler, yoksa boş şablon döner."""
-    file_path = "learner_analytics.json"
+    """Kullanıcının izole dizindeki öğrenme analitiğini yükler, yoksa boş şablon döner."""
+    dir_path = get_user_data_dir()
+    file_path = os.path.join(dir_path, "learner_analytics.json")
     if os.path.exists(file_path):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -68,9 +85,10 @@ def load_analytics():
     }
 
 def save_analytics(analytics_data):
-    """Kullanıcının öğrenme analitiğini diske kaydeder."""
-    file_path = "learner_analytics.json"
+    """Kullanıcının öğrenme analitiğini izole diske kaydeder."""
     try:
+        dir_path = get_user_data_dir()
+        file_path = os.path.join(dir_path, "learner_analytics.json")
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(analytics_data, f, ensure_ascii=False, indent=4)
         return True
