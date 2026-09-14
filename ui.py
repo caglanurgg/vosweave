@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import datetime
 from ai_engine import generate_explanation, generate_speech
 from analytics import update_analytics
 from storage import save_analytics
@@ -41,9 +42,15 @@ def render_sidebar(save_heatmap):
         st.sidebar.markdown("### 📊 AI Memory Dashboard")
         
         all_words = st.session_state['heatmap_vocab']
-        know_count = sum(1 for status in all_words.values() if "I know this" in status)
-        seen_count = sum(1 for status in all_words.values() if "I've seen this" in status)
-        new_count = sum(1 for status in all_words.values() if "New to me" in status)
+        
+        def get_status(val):
+            if isinstance(val, dict):
+                return val.get("status", "")
+            return str(val)
+
+        know_count = sum(1 for val in all_words.values() if "I know this" in get_status(val))
+        seen_count = sum(1 for val in all_words.values() if "I've seen this" in get_status(val))
+        new_count = sum(1 for val in all_words.values() if "New to me" in get_status(val))
         
         st.sidebar.write(f"🟢 **I know this:** {know_count}")
         st.sidebar.write(f"🟡 **I've seen this:** {seen_count}")
@@ -51,7 +58,8 @@ def render_sidebar(save_heatmap):
         st.sidebar.write("---")
         
         st.sidebar.markdown("#### 🗺️ Registered Vocabulary Heatmap")
-        for word, status in all_words.items():
+        for word, val in all_words.items():
+            status = get_status(val)
             if "I know this" in status:
                 st.sidebar.write(f"🟢 **{word}**")
             elif "I've seen this" in status:
@@ -117,23 +125,47 @@ def render_vocabulary_assistant(vocabulary, save_heatmap, api_key):
                 st.write("")
 
             st.write(f"**📝 Example:** {item.get('example', 'No example provided.')}")
-            
+
             st.markdown("**How familiar is this word to you?**")
             v_col1, v_col2, v_col3 = st.columns(3)
             
+            current_item_state = st.session_state['heatmap_vocab'].get(word_key, {})
+            if not isinstance(current_item_state, dict):
+                current_item_state = {"status": current_item_state, "times_seen": 1}
+
+            now_str = datetime.datetime.now().isoformat()
+
             with v_col1:
                 if st.button("🟢 I know this", key=f"know_{idx}"):
-                    st.session_state['heatmap_vocab'][word_key] = "🟢 I know this"
+                    current_item_state["status"] = "🟢 I know this"
+                    current_item_state["last_seen"] = now_str
+                    current_item_state["times_seen"] = current_item_state.get("times_seen", 0) + 1
+                    if "first_seen" not in current_item_state:
+                        current_item_state["first_seen"] = now_str
+                        
+                    st.session_state['heatmap_vocab'][word_key] = current_item_state
                     save_heatmap(st.session_state['heatmap_vocab'])
                     st.rerun()
             with v_col2:
                 if st.button("🟡 I've seen this", key=f"seen_{idx}"):
-                    st.session_state['heatmap_vocab'][word_key] = "🟡 I've seen this"
+                    current_item_state["status"] = "🟡 I've seen this"
+                    current_item_state["last_seen"] = now_str
+                    current_item_state["times_seen"] = current_item_state.get("times_seen", 0) + 1
+                    if "first_seen" not in current_item_state:
+                        current_item_state["first_seen"] = now_str
+                        
+                    st.session_state['heatmap_vocab'][word_key] = current_item_state
                     save_heatmap(st.session_state['heatmap_vocab'])
                     st.rerun()
             with v_col3:
                 if st.button("🔴 New to me", key=f"new_{idx}"):
-                    st.session_state['heatmap_vocab'][word_key] = "🔴 New to me"
+                    current_item_state["status"] = "🔴 New to me"
+                    current_item_state["last_seen"] = now_str
+                    current_item_state["times_seen"] = current_item_state.get("times_seen", 0) + 1
+                    if "first_seen" not in current_item_state:
+                        current_item_state["first_seen"] = now_str
+                        
+                    st.session_state['heatmap_vocab'][word_key] = current_item_state
                     save_heatmap(st.session_state['heatmap_vocab'])
                     st.rerun()
 
