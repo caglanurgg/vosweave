@@ -49,7 +49,6 @@ def build_memory_instruction(heatmap_vocab):
 @st.cache_data(show_spinner=False, ttl=3600)
 def _cached_openai_generation(api_key, target_language, seviye, ton, kelime_sayisi, konu, vocab_tuple, settings_tuple):
     """Önbelleklenen (Cached) OpenAI API çağrı katmanı - Maliyet ve Token Koruması"""
-    # Hashlenebilir tuple formatından tekrar sözlüklere dönüştürüyoruz
     heatmap_vocab = dict(vocab_tuple)
     exercise_settings = dict(settings_tuple)
 
@@ -144,7 +143,6 @@ def generate_reading_package(api_key, target_language, seviye, ton, kelime_sayis
     Sözlükleri hashlenebilir tuple formatına çevirerek önbellekli fonksiyonu tetikler.
     """
     try:
-        # Dict yapılarını önbellek (cache) ile uyumlu hale getiriyoruz
         vocab_tuple = tuple(sorted((k, str(v)) for k, v in heatmap_vocab.items())) if heatmap_vocab else tuple()
         settings_tuple = tuple(sorted(exercise_settings.items())) if exercise_settings else tuple()
         
@@ -205,3 +203,41 @@ def generate_speech(api_key, text_to_speak):
         return response.read()
     except Exception as e:
         return None
+
+def evaluate_content_recall(api_key, original_text, user_recall, target_language, level):
+    """Evaluate how accurately the learner recalls the main ideas of a reading text."""
+    try:
+        client = OpenAI(api_key=api_key)
+
+        prompt = f"""
+You are a supportive language-learning assistant.
+
+The learner read a text and then recalled its main ideas from memory.
+Evaluate the learner's recall, not their grammar.
+
+Target language: {target_language}
+CEFR level: {level}
+
+Original text:
+{original_text}
+
+Learner's recall:
+{user_recall}
+
+Give feedback in the target language at an appropriate level.
+Return:
+1. What the learner remembered correctly.
+2. Important ideas they missed or misunderstood.
+3. One specific suggestion for improving their recall.
+
+Be constructive and accurate. Do not claim the learner missed something
+that is not important to the original text.
+"""
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Could not evaluate your recall: {e}"

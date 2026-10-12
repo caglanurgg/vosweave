@@ -6,7 +6,8 @@ from analytics import update_analytics
 from storage import save_analytics
 
 def render_sidebar(save_heatmap):
-    st.sidebar.markdown(f"👤 **{st.user.name or st.user.email}**")
+    user_display = getattr(st.user, "name", None) or getattr(st.user, "email", "Local User")
+    st.sidebar.markdown(f"👤 **{user_display}**")
     if st.sidebar.button("Log out"):
         st.logout()
     st.sidebar.divider()

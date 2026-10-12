@@ -2,7 +2,12 @@ import os
 import streamlit as st
 from storage import load_heatmap, save_heatmap, load_reading_session, save_reading_session
 from highlighter import highlight_text
-from ai_engine import generate_reading_package, generate_explanation, generate_speech
+from ai_engine import (
+    generate_reading_package,
+    generate_explanation,
+    generate_speech,
+    evaluate_content_recall,
+)
 from ui import render_sidebar, render_vocabulary_assistant, render_exercises
 from quota_manager import check_and_increment_quota, get_current_quota
 
@@ -22,14 +27,20 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Kullanıcı girişi kontrolü (Gatekeeper)
-if not st.user.is_logged_in:
+# --- KULLANICI GİRİŞİ KONTROLÜ (GATEKEEPER) ---
+# AttributeError önlemi: getattr ile güvenli okuma
+is_logged_in = getattr(st.user, "is_logged_in", False) if hasattr(st, "user") else False
+
+# Codespaces ortamında yerel test yaparken otomatik geçiş sağlar; canlıda (production) ise login zorunluluğunu korur
+is_local_dev = os.getenv("CODESPACES") == "true"
+
+if not is_logged_in and not is_local_dev:
     st.title("🦊 VosWeave")
     st.caption("Adaptive Cognitive Reading & Language Continuity Engine")
     st.info("Lütfen devam etmek için Google hesabınızla giriş yapın.")
     if st.button("Sign in with Google 🚀", type="primary"):
         st.login("google")
-    st.stop()  
+    st.stop()
 
 if 'heatmap_vocab' not in st.session_state:
     st.session_state['heatmap_vocab'] = load_heatmap()
@@ -47,7 +58,14 @@ st.markdown("<h1 class='main-title'>🦊 VosWeave</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Adaptive Cognitive Reading & Language Continuity Engine</p>", unsafe_allow_html=True)
 st.write("---")
 
-api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", "")
+# Secrets dosyası yoksa patlamaması için güvenli kontrol:
+secret_key = ""
+try:
+    secret_key = st.secrets.get("OPENAI_API_KEY", "")
+except Exception:
+    secret_key = ""
+
+api_key = os.getenv("OPENAI_API_KEY") or secret_key
 if not api_key:
     st.warning("⚠️ Please define 'OPENAI_API_KEY' in your system environment or Streamlit Secrets.")
     api_key = st.text_input("Or enter your API Key here for testing:", type="password")
@@ -111,6 +129,11 @@ if st.button("Generate Text & Exercises 🚀", use_container_width=True):
                 )
             
             if success:
+                # Yeni metin üretildiğinde önceki recall verilerini sıfırla
+                st.session_state["recall_text_visible"] = True
+                st.session_state.pop("content_recall_answer", None)
+                st.session_state.pop("content_recall_feedback", None)
+
                 session_payload = {
                     "api_data": parsed_data, "ui_target_language": target_language,
                     "ui_seviye": seviye, "ui_ton": ton, "ui_kelime_sayisi": kelime_sayisi,
@@ -128,7 +151,7 @@ if st.session_state['saved_session'] is not None and "api_data" in st.session_st
     
     main_col1, main_col2 = st.columns([1.1, 1.0], gap="large")
     
-    # 📖 SOL KOLON: Sabit Okuma Metni, Skorlar ve Seslendirme
+    # 📖 SOL KOLON: Sabit Okuma Metni, Skorlar, Seslendirme ve Recall Alanı
     with main_col1:
         st.subheader(f"📖 {data.get('title', 'Reading Text')}")
         
@@ -145,15 +168,76 @@ if st.session_state['saved_session'] is not None and "api_data" in st.session_st
         </div>
         """, unsafe_allow_html=True)
         
-        reading_text = highlight_text(data.get("text", ""), st.session_state['heatmap_vocab'])
-        st.markdown(f"<div style='line-height:1.8; font-size:1.1rem; background-color: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);'>{reading_text}</div>", unsafe_allow_html=True)
+        # --- READING TEXT VISIBILITY ---
+        if "recall_text_visible" not in st.session_state:
+            st.session_state["recall_text_visible"] = True
+
+        if st.session_state["recall_text_visible"]:
+            reading_text = highlight_text(
+                data.get("text", ""),
+                st.session_state['heatmap_vocab']
+            )
+            st.markdown(
+                f"<div style='line-height:1.8; font-size:1.1rem; "
+                f"background-color: rgba(255,255,255,0.03); "
+                f"padding: 15px; border-radius: 8px; "
+                f"border: 1px solid rgba(255,255,255,0.1);'>"
+                f"{reading_text}</div>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.info("🔒 The reading text is hidden. Try to recall its main ideas.")
+
         st.write("")
-        
-        if st.button("🔊 Listen to Whole Text", use_container_width=True, key="listen_whole_text_main"):
-            with st.spinner("Metin seslendiriliyor..."):
-                entire_audio = generate_speech(api_key, data.get("text", ""))
-                if entire_audio:
-                    st.audio(entire_audio, format="audio/mp3", autoplay=True)
+
+        btn_c1, btn_c2 = st.columns(2)
+        with btn_c1:
+            if st.session_state["recall_text_visible"]:
+                if st.button(
+                    "🔊 Listen to Whole Text",
+                    use_container_width=True,
+                    key="listen_whole_text_main"
+                ):
+                    with st.spinner("Generating audio..."):
+                        entire_audio = generate_speech(api_key, data.get("text", ""))
+                        if entire_audio:
+                            st.audio(entire_audio, format="audio/mp3", autoplay=True)
+
+        with btn_c2:
+            toggle_label = "🔒 Hide text to practice" if st.session_state["recall_text_visible"] else "👀 Show reading text"
+            if st.button(toggle_label, use_container_width=True, key="toggle_recall_text"):
+                st.session_state["recall_text_visible"] = not st.session_state["recall_text_visible"]
+                st.rerun()
+
+        # --- RECALL INTERFACE ---
+        st.write("---")
+        st.subheader("🧠 Content Recall")
+        st.caption("Hide the text above and try to recall its main ideas in your own words.")
+
+        recall_answer = st.text_area(
+            "What do you remember from the text?",
+            key="content_recall_answer",
+            height=150,
+            placeholder="Write the main ideas you remember...",
+        )
+
+        if st.button("Check my recall 🚀", use_container_width=True, key="check_content_recall"):
+            if not recall_answer.strip():
+                st.warning("Write down what you remember first.")
+            else:
+                with st.spinner("Reviewing your recall..."):
+                    feedback = evaluate_content_recall(
+                        api_key=api_key,
+                        original_text=data.get("text", ""),
+                        user_recall=recall_answer,
+                        target_language=st.session_state["saved_session"]["ui_target_language"],
+                        level=st.session_state["saved_session"]["ui_seviye"],
+                    )
+                    st.session_state["content_recall_feedback"] = feedback
+
+        if st.session_state.get("content_recall_feedback"):
+            st.markdown("### 💡 Feedback")
+            st.markdown(st.session_state["content_recall_feedback"])
                     
     with main_col2:
         render_vocabulary_assistant(data.get('vocabulary', []), save_heatmap, api_key)
