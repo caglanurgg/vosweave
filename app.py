@@ -224,16 +224,27 @@ if st.session_state['saved_session'] is not None and "api_data" in st.session_st
         if st.button("Check my recall 🚀", use_container_width=True, key="check_content_recall"):
             if not recall_answer.strip():
                 st.warning("Write down what you remember first.")
+            elif not api_key:
+                st.warning("Please provide your OpenAI API key first.")
             else:
-                with st.spinner("Reviewing your recall..."):
-                    feedback = evaluate_content_recall(
-                        api_key=api_key,
-                        original_text=data.get("text", ""),
-                        user_recall=recall_answer,
-                        target_language=st.session_state["saved_session"]["ui_target_language"],
-                        level=st.session_state["saved_session"]["ui_seviye"],
-                    )
-                    st.session_state["content_recall_feedback"] = feedback
+                allowed, current_count = check_and_increment_quota(
+                    max_daily_limit=10,
+                    action="recall"
+                )
+
+                if not allowed:
+                    st.warning(f"🚨 Daily AI usage limit reached ({current_count}/10). Please try again tomorrow.")
+                else:
+                    with st.spinner("Reviewing your recall..."):
+                        feedback = evaluate_content_recall(
+                            api_key=api_key,
+                            original_text=data.get("text", ""),
+                            user_recall=recall_answer,
+                            target_language=st.session_state["saved_session"]["ui_target_language"],
+                            level=st.session_state["saved_session"]["ui_seviye"],
+                        )
+                        st.session_state["content_recall_feedback"] = feedback
+                        st.rerun()
 
         if st.session_state.get("content_recall_feedback"):
             st.markdown("### 💡 Feedback")
